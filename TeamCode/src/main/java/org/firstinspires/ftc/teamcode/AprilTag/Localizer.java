@@ -5,6 +5,8 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -12,6 +14,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,33 +28,45 @@ public class Localizer {
     private static final HashMap<Integer, Pose2d> aprilTagPositions = new HashMap<>();
     static {
         aprilTagPositions.put(1, new Pose2d(
-                0, 0
+                -42, 62.5
         ));
         aprilTagPositions.put(2, new Pose2d(
-                0, 0
+                -36, 62.5
         ));
         aprilTagPositions.put(3, new Pose2d(
-                0, 0
+                -30, 62.5
         ));
         aprilTagPositions.put(4, new Pose2d(
-                0, 0
+                30, 62.5
         ));
         aprilTagPositions.put(5, new Pose2d(
-                0, 0
+                36, 62.5
         ));
         aprilTagPositions.put(6, new Pose2d(
-                0, 0
+                42, 62.5
         ));
+        /* for bigger tag
         aprilTagPositions.put(7, new Pose2d(
-                0, 0
+                0, -72
         ));
+         */
         aprilTagPositions.put(8, new Pose2d(
-                0, 0
+                36, -72
         ));
+        aprilTagPositions.put(9, new Pose2d(
+                -36, -72
+        ));
+        /* for bigger tag
+        aprilTagPositions.put(10, new Pose2d(
+            0, -72
+        ));
+         */
     }
+    Telemetry telemetry;
 
-    public void init(HardwareMap hwMap) {
+    public void init(HardwareMap hwMap, Telemetry telemetryInput) {
         visionPortalBuilder.addProcessor(processor);
+        visionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
         visionPortal = visionPortalBuilder.build();
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -61,27 +76,68 @@ public class Localizer {
         );
         imu = hwMap.get(IMU.class, "imu");
         imu.initialize(imuParameters);
+        imu.resetYaw();
+        telemetry = telemetryInput;
     }
+    private JSONObject main;
     public Pose2d getPosition() {
-        JSONObject main = new JSONObject();
+        main = new JSONObject();
         List<AprilTagDetection> detections = processor.getDetections();
         for(AprilTagDetection detection : detections) {
+            System.out.println("id " + detection.id + ", angle " + (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
             try {
                 main.put(String.valueOf(detection.id), (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
             }
             catch (JSONException ignored) {}
         }
-        return new Pose2d();
+        ArrayList<Pose2d> triangulatedPositions = new ArrayList<>();
+        for(int i = 0; i < main.length(); i++) {
+            for(int j = 0; j < main.length(); j++) {
+                triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault(i, new Pose2d(0, 0, 0)), safeGetFromJSON(String.valueOf(i))),
+                        addHeadingToPose2d(aprilTagPositions.getOrDefault(j, new Pose2d(0, 0, 0)), safeGetFromJSON(String.valueOf(j)))));
+                // need to not use i for references, need to use the id of the apriltag instead
+            }
+        }
+        double averageX = 0;
+        double averageY = 0;
+        for(Pose2d position : triangulatedPositions) {
+            averageX += position.getX();
+            averageY += position.getY();
+        }
+        averageX = averageX / triangulatedPositions.size();
+        averageY = averageY / triangulatedPositions.size();
+        return new Pose2d(
+                averageX, averageY, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS)
+        );
+    }
+    private Pose2d addHeadingToPose2d(Pose2d input, double heading) {
+        return new Pose2d(
+                input.getX(),
+                input.getY(),
+                heading
+        );
+    }
+    private int safeGetFromJSON(String name) {
+        try {
+            return main.getInt(name);
+        }
+        catch(JSONException ignored) {
+            return 0;
+        }
     }
     private Pose2d runTriangulation(Pose2d pos1, Pose2d pos2) {
-        Pose2d output = new Pose2d(
-                ((pos1.getY() - pos2.getY()) + (pos2.getX() * Math.tan(pos2.getHeading())
-                        - (pos1.getX() * Math.tan(pos1.getHeading())))
-                        / (Math.tan(pos2.getHeading()) - Math.tan(pos1.getHeading()))),
-                ((pos1.getY() * Math.tan(pos2.getHeading())) - (pos2.getY() * Math.tan(pos1.getHeading()))
-                        - ((pos1.getX() - pos2.getX()) * Math.tan(pos2.getHeading()))
-                        / (Math.tan(pos2.getHeading()) - Math.tan(pos1.getHeading())))
+        double tanPos1 = Math.tan(pos1.getHeading()); // for optimization
+        double tanPos2 = Math.tan(pos2.getHeading());
+        // start of triangulation
+        return new Pose2d(
+                // triangulate x coordinate
+                ((pos1.getY() - pos2.getY()) + (pos2.getX() * tanPos2
+                        - (pos1.getX() * tanPos1))
+                        / (tanPos2 - tanPos1)),
+                // triangulate y coordinate
+                ((pos1.getY() * tanPos2) - (pos2.getY() * tanPos1)
+                        - ((pos1.getX() - pos2.getX()) * tanPos2)
+                        / (tanPos2 - tanPos1))
         );
-        return output;
     }
 }
