@@ -79,23 +79,21 @@ public class Localizer {
         imu.resetYaw();
         telemetry = telemetryInput;
     }
-    private JSONObject main;
+    private HashMap<Integer, Double> main;
     public Pose2d getPosition() {
-        main = new JSONObject();
+        main = new HashMap<Integer, Double>();
         List<AprilTagDetection> detections = processor.getDetections();
         for(AprilTagDetection detection : detections) {
             System.out.println("id " + detection.id + ", angle " + (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
-            try {
-                main.put(String.valueOf(detection.id), (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
-            }
-            catch (JSONException ignored) {}
+            main.put(detection.id, (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
         }
         ArrayList<Pose2d> triangulatedPositions = new ArrayList<>();
-        for(int i = 0; i < main.length(); i++) {
-            for(int j = 0; j < main.length(); j++) {
-                triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault(i, new Pose2d(0, 0, 0)), safeGetFromJSON(String.valueOf(i))),
-                        addHeadingToPose2d(aprilTagPositions.getOrDefault(j, new Pose2d(0, 0, 0)), safeGetFromJSON(String.valueOf(j)))));
-                // need to not use i for references, need to use the id of the apriltag instead
+        Object[] keys = main.keySet().toArray();
+        for(int i = 0; i < main.size(); i++) {
+            for(int j = 0; j < main.size(); j++) {
+                System.out.println(keys[i]);
+                triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[i], new Pose2d(0, 0, 0)), (int) keys[i]),
+                        addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[j], new Pose2d(0, 0, 0)), main.get((int) keys[j]))));
             }
         }
         double averageX = 0;
@@ -116,14 +114,6 @@ public class Localizer {
                 input.getY(),
                 heading
         );
-    }
-    private int safeGetFromJSON(String name) {
-        try {
-            return main.getInt(name);
-        }
-        catch(JSONException ignored) {
-            return 0;
-        }
     }
     private Pose2d runTriangulation(Pose2d pos1, Pose2d pos2) {
         double tanPos1 = Math.tan(pos1.getHeading()); // for optimization
