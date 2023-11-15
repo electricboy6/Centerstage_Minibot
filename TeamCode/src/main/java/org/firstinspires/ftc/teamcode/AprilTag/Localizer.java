@@ -4,22 +4,18 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
-
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class Localizer {
     private AprilTagProcessor processor = new AprilTagProcessor.Builder()
+            // these values are for calibration
             //.setLensIntrinsics(578.272, 578.272, 402.145, 221.506)
             .build();
     private VisionPortal.Builder visionPortalBuilder = new VisionPortal.Builder();
@@ -62,9 +58,7 @@ public class Localizer {
         ));
          */
     }
-    Telemetry telemetry;
-
-    public void init(HardwareMap hwMap, Telemetry telemetryInput) {
+    public void init(HardwareMap hwMap) {
         visionPortalBuilder.addProcessor(processor);
         visionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
         visionPortal = visionPortalBuilder.build();
@@ -75,23 +69,23 @@ public class Localizer {
                 )
         );
         imu = hwMap.get(IMU.class, "imu");
+        imu.resetDeviceConfigurationForOpMode();
         imu.initialize(imuParameters);
+        safeWait(25);
         imu.resetYaw();
-        telemetry = telemetryInput;
+        safeWait(25);
     }
-    private HashMap<Integer, Double> main;
+    private HashMap<Integer, Double> main = new HashMap<>();
     public Pose2d getPosition() {
-        main = new HashMap<Integer, Double>();
         List<AprilTagDetection> detections = processor.getDetections();
         for(AprilTagDetection detection : detections) {
-            System.out.println("id " + detection.id + ", angle " + (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
-            main.put(detection.id, (detection.ftcPose.yaw + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
+            System.out.println("id " + detection.id + ", angle " + (detection.ftcPose.bearing + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
+            main.put(detection.id, (detection.ftcPose.bearing + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
         }
         ArrayList<Pose2d> triangulatedPositions = new ArrayList<>();
         Object[] keys = main.keySet().toArray();
         for(int i = 0; i < main.size(); i++) {
             for(int j = 0; j < main.size(); j++) {
-                System.out.println(keys[i]);
                 triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[i], new Pose2d(0, 0, 0)), (int) keys[i]),
                         addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[j], new Pose2d(0, 0, 0)), main.get((int) keys[j]))));
             }
@@ -105,7 +99,7 @@ public class Localizer {
         averageX = averageX / triangulatedPositions.size();
         averageY = averageY / triangulatedPositions.size();
         return new Pose2d(
-                averageX, averageY, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS)
+            averageX, averageY, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS)
         );
     }
     private Pose2d addHeadingToPose2d(Pose2d input, double heading) {
@@ -129,5 +123,11 @@ public class Localizer {
                         - ((pos1.getX() - pos2.getX()) * tanPos2)
                         / (tanPos2 - tanPos1))
         );
+    }
+    private void safeWait(long ms) {
+        try {
+            wait(ms);
+        }
+        catch(InterruptedException | IllegalMonitorStateException ignored) {}
     }
 }
