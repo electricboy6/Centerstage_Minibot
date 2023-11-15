@@ -86,8 +86,10 @@ public class Localizer {
         Object[] keys = main.keySet().toArray();
         for(int i = 0; i < main.size(); i++) {
             for(int j = 0; j < main.size(); j++) {
-                triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[i], new Pose2d(0, 0, 0)), (int) keys[i]),
-                        addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[j], new Pose2d(0, 0, 0)), main.get((int) keys[j]))));
+                if (!((int) keys[i] == (int) keys[j])) {
+                    triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[i], new Pose2d(0, 0, 0)), (int) keys[i]),
+                            addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[j], new Pose2d(0, 0, 0)), main.get((int) keys[j]))));
+                }
             }
         }
         double averageX = 0;
