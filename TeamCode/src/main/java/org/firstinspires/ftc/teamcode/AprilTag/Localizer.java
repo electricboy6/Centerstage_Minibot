@@ -10,6 +10,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -41,22 +42,18 @@ public class Localizer {
         aprilTagPositions.put(6, new Pose2d(
                 42, 62.5
         ));
-        /* for bigger tag
         aprilTagPositions.put(7, new Pose2d(
-                0, -72
+                42, -72
         ));
-         */
         aprilTagPositions.put(8, new Pose2d(
                 36, -72
         ));
         aprilTagPositions.put(9, new Pose2d(
                 -36, -72
         ));
-        /* for bigger tag
         aprilTagPositions.put(10, new Pose2d(
-            0, -72
+            -42, -72
         ));
-         */
     }
     public void init(HardwareMap hwMap) {
         visionPortalBuilder.addProcessor(processor);
@@ -69,26 +66,35 @@ public class Localizer {
                 )
         );
         imu = hwMap.get(IMU.class, "imu");
-        imu.resetDeviceConfigurationForOpMode();
         imu.initialize(imuParameters);
-        safeWait(25);
         imu.resetYaw();
-        safeWait(25);
     }
     private HashMap<Integer, Double> main = new HashMap<>();
     public Pose2d getPosition() {
         List<AprilTagDetection> detections = processor.getDetections();
+        if(detections.size() < 2) return null;
         for(AprilTagDetection detection : detections) {
             System.out.println("id " + detection.id + ", angle " + (detection.ftcPose.bearing + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
             main.put(detection.id, (detection.ftcPose.bearing + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
         }
         ArrayList<Pose2d> triangulatedPositions = new ArrayList<>();
+        ArrayList<int[]> testedPositions = new ArrayList<>();
         Object[] keys = main.keySet().toArray();
         for(int i = 0; i < main.size(); i++) {
             for(int j = 0; j < main.size(); j++) {
-                if (!((int) keys[i] == (int) keys[j])) {
-                    triangulatedPositions.add(runTriangulation(addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[i], new Pose2d(0, 0, 0)), (int) keys[i]),
-                            addHeadingToPose2d(aprilTagPositions.getOrDefault((int) keys[j], new Pose2d(0, 0, 0)), main.get((int) keys[j]))));
+                if (!((int) keys[i] == (int) keys[j])
+                        && !(
+                                testedPositions.contains(new int[]{(int) keys[i], (int) keys[j]}) ||
+                                testedPositions.contains(new int[]{(int) keys[j], (int) keys[i]})
+                )) {
+                    System.out.println("Array " + Arrays.toString(new int[]{(int) keys[i], (int) keys[j]}));
+                    System.out.println("Tested " + Arrays.toString(testedPositions.get(0)));
+                    System.out.println("id1 " + keys[i] + " id2 " + keys[j]);
+                    testedPositions.add(new int[]{(int) keys[i], (int) keys[j]});
+                    triangulatedPositions.add(
+                            runTriangulation(addHeadingToPose2d(aprilTagPositions.get((int) keys[i]), (int) keys[i]),
+                            addHeadingToPose2d(aprilTagPositions.get((int) keys[j]), main.get((int) keys[j])))
+                    );
                 }
             }
         }
