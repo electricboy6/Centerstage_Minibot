@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.AprilTag;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -9,10 +11,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class Localizer {
     private AprilTagProcessor processor = new AprilTagProcessor.Builder()
@@ -22,40 +25,43 @@ public class Localizer {
     private VisionPortal.Builder visionPortalBuilder = new VisionPortal.Builder();
     private VisionPortal visionPortal;
     private IMU imu;
+    private static final int xOffset = 0;
+    private static final int yOffset = 0;
+    private static final int headingOffset = 0;
     private static final HashMap<Integer, Pose2d> aprilTagPositions = new HashMap<>();
     static {
         aprilTagPositions.put(1, new Pose2d(
-                -42, 62.5
+                -42, 62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(2, new Pose2d(
-                -36, 62.5
+                -36, 62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(3, new Pose2d(
-                -30, 62.5
+                -30, 62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(4, new Pose2d(
-                30, 62.5
+                30, 62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(5, new Pose2d(
-                36, 62.5
+                36, 62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(6, new Pose2d(
-                42, 62.5
+                42, 62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(7, new Pose2d(
-                42, -72
+                42, -72, Math.toRadians(270)
         ));
         aprilTagPositions.put(8, new Pose2d(
-                36, -72
+                36, -72, Math.toRadians(270)
         ));
         aprilTagPositions.put(9, new Pose2d(
-                -36, -72
+                -36, -72, Math.toRadians(270)
         ));
         aprilTagPositions.put(10, new Pose2d(
-            -42, -72
+                -42, -72, Math.toRadians(270)
         ));
     }
-    public void init(HardwareMap hwMap) {
+    public void init(@NonNull HardwareMap hwMap) {
         visionPortalBuilder.addProcessor(processor);
         visionPortalBuilder.setCamera(hwMap.get(WebcamName.class, "Webcam 1"));
         visionPortal = visionPortalBuilder.build();
@@ -73,69 +79,77 @@ public class Localizer {
     public Pose2d getPosition() {
         List<AprilTagDetection> detections = processor.getDetections();
         if(detections.size() < 2) return null;
+        double yaw = 0;
+        double angle;
         for(AprilTagDetection detection : detections) {
-            System.out.println("id " + detection.id + ", angle " + (detection.ftcPose.bearing + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
-            main.put(detection.id, (detection.ftcPose.bearing + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES)));
+            if(detection != null) { // HUGE paranoia
+                yaw = aprilTagPositions.get(detection.id).getHeading() - Math.toRadians(detection.ftcPose.bearing);
+                angle = aprilTagPositions.get(detection.id).getHeading() - detection.ftcPose.bearing;
+                System.out.println("id " + detection.id + ", angle " + (yaw));
+                main.put(detection.id, (yaw + aprilTagPositions.get(detection.id).getHeading()));
+            }
         }
         ArrayList<Pose2d> triangulatedPositions = new ArrayList<>();
         ArrayList<int[]> testedPositions = new ArrayList<>();
         Object[] keys = main.keySet().toArray();
         for(int i = 0; i < main.size(); i++) {
             for(int j = 0; j < main.size(); j++) {
-                if (!((int) keys[i] == (int) keys[j])
+                if (
+                        !((int) keys[i] == (int) keys[j])
                         && !(
                                 testedPositions.contains(new int[]{(int) keys[i], (int) keys[j]}) ||
                                 testedPositions.contains(new int[]{(int) keys[j], (int) keys[i]})
                 )) {
-                    System.out.println("Array " + Arrays.toString(new int[]{(int) keys[i], (int) keys[j]}));
-                    System.out.println("Tested " + Arrays.toString(testedPositions.get(0)));
-                    System.out.println("id1 " + keys[i] + " id2 " + keys[j]);
                     testedPositions.add(new int[]{(int) keys[i], (int) keys[j]});
                     triangulatedPositions.add(
-                            runTriangulation(addHeadingToPose2d(aprilTagPositions.get((int) keys[i]), (int) keys[i]),
-                            addHeadingToPose2d(aprilTagPositions.get((int) keys[j]), main.get((int) keys[j])))
+                            runTriangulation(addHeadingToPose2d(Objects.requireNonNull(aprilTagPositions.get((int) keys[i])), main.get((int) keys[i])),
+                            addHeadingToPose2d(Objects.requireNonNull(aprilTagPositions.get((int) keys[j])), main.get((int) keys[j])))
                     );
                 }
             }
         }
-        double averageX = 0;
-        double averageY = 0;
-        for(Pose2d position : triangulatedPositions) {
-            averageX += position.getX();
-            averageY += position.getY();
-        }
-        averageX = averageX / triangulatedPositions.size();
-        averageY = averageY / triangulatedPositions.size();
-        return new Pose2d(
-            averageX, averageY, imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS)
-        );
+
+        return adjustPose2dForWebcamPosition(addHeadingToPose2d(averagePose2dList(triangulatedPositions), yaw));
     }
-    private Pose2d addHeadingToPose2d(Pose2d input, double heading) {
+    private Pose2d addHeadingToPose2d(@NonNull Pose2d input, double heading) {
         return new Pose2d(
                 input.getX(),
                 input.getY(),
                 heading
         );
     }
-    private Pose2d runTriangulation(Pose2d pos1, Pose2d pos2) {
-        double tanPos1 = Math.tan(pos1.getHeading()); // for optimization
+    private Pose2d adjustPose2dForWebcamPosition(@NonNull Pose2d input) {
+        return new Pose2d(input.getX() - xOffset, input.getY() - yOffset, input.getHeading() - headingOffset);
+    }
+    private Pose2d averagePose2dList(@NonNull ArrayList<Pose2d> input) {
+        double averageX = 0;
+        double averageY = 0;
+        double averageHeading = 0;
+        for(Pose2d currentPose2d : input) {
+            averageX += currentPose2d.getX();
+            averageY += currentPose2d.getY();
+            averageHeading += currentPose2d.getHeading();
+        }
+        averageX /= input.size();
+        averageY /= input.size();
+        averageHeading /= input.size();
+        return new Pose2d(averageX, averageY, averageHeading);
+    }
+    private Pose2d runTriangulation(@NonNull Pose2d pos1, @NonNull Pose2d pos2) {
+        double tanPos1 = Math.tan(pos1.getHeading());
         double tanPos2 = Math.tan(pos2.getHeading());
+        double pos1X = pos1.getX();
+        double pos1Y = pos1.getY();
+        double pos2X = pos2.getX();
+        double pos2Y = pos2.getY();
         // start of triangulation
         return new Pose2d(
                 // triangulate x coordinate
-                ((pos1.getY() - pos2.getY()) + (pos2.getX() * tanPos2
-                        - (pos1.getX() * tanPos1))
+                (((pos1Y - pos2Y) + (pos2X * tanPos2 - (pos1X * tanPos1)))
                         / (tanPos2 - tanPos1)),
                 // triangulate y coordinate
-                ((pos1.getY() * tanPos2) - (pos2.getY() * tanPos1)
-                        - ((pos1.getX() - pos2.getX()) * tanPos2)
+                ((((pos1Y * tanPos2) - (pos2Y * tanPos1)) - ((pos1X - pos2X) * tanPos2))
                         / (tanPos2 - tanPos1))
         );
-    }
-    private void safeWait(long ms) {
-        try {
-            wait(ms);
-        }
-        catch(InterruptedException | IllegalMonitorStateException ignored) {}
     }
 }

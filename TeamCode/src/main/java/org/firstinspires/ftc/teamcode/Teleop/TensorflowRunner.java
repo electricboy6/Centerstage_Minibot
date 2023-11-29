@@ -13,8 +13,7 @@ import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 
 import java.util.List;
 
-@TeleOp(name = "Concept: TensorFlow Object Detection", group = "Concept")
-@Disabled
+@TeleOp(name = "tfod runner")
 public class TensorflowRunner extends LinearOpMode {
 
     private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
@@ -76,13 +75,13 @@ public class TensorflowRunner extends LinearOpMode {
                 // Use setModelAssetName() if the TF Model is built in as an asset.
                 // Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
                 //.setModelAssetName(TFOD_MODEL_ASSET)
-                .setModelFileName("")
+                .setModelFileName("/sdcard/testModel.tflite")
 
-                //.setModelLabels(LABELS)
-                .setIsModelTensorFlow2(true)
+                .setModelLabels(new String[]{"pixel"})
+                //.setIsModelTensorFlow2(true) // our models are tf3
                 .setIsModelQuantized(true)
                 //.setModelInputSize(300)
-                //.setModelAspectRatio(16.0 / 9.0)
+                .setModelAspectRatio(16.0 / 9.0)
 
                 .build();
 
