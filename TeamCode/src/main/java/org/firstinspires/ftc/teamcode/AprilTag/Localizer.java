@@ -7,7 +7,6 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -28,37 +27,40 @@ public class Localizer {
     private static final int xOffset = 0;
     private static final int yOffset = 0;
     private static final int headingOffset = 0;
+    private static final float xMult = 0.519f;
+    private static final float yMult = 0.611f;
+    private static final float headingMult = 1f;
     private static final HashMap<Integer, Pose2d> aprilTagPositions = new HashMap<>();
     static {
         aprilTagPositions.put(1, new Pose2d(
-                -42, 62.5, Math.toRadians(90)
+                -42,62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(2, new Pose2d(
-                -36, 62.5, Math.toRadians(90)
+                -36,62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(3, new Pose2d(
-                -30, 62.5, Math.toRadians(90)
+                -30,62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(4, new Pose2d(
-                30, 62.5, Math.toRadians(90)
+                30,62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(5, new Pose2d(
-                36, 62.5, Math.toRadians(90)
+                36,62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(6, new Pose2d(
-                42, 62.5, Math.toRadians(90)
+                42,62.5, Math.toRadians(90)
         ));
         aprilTagPositions.put(7, new Pose2d(
-                42, -72, Math.toRadians(270)
+                42,-72, Math.toRadians(270)
         ));
         aprilTagPositions.put(8, new Pose2d(
-                36, -72, Math.toRadians(270)
+                36,-72, Math.toRadians(270)
         ));
         aprilTagPositions.put(9, new Pose2d(
-                -36, -72, Math.toRadians(270)
+                -36,-72, Math.toRadians(270)
         ));
         aprilTagPositions.put(10, new Pose2d(
-                -42, -72, Math.toRadians(270)
+                -42,-72, Math.toRadians(270)
         ));
     }
     public void init(@NonNull HardwareMap hwMap) {
@@ -83,10 +85,10 @@ public class Localizer {
         double angle;
         for(AprilTagDetection detection : detections) {
             if(detection != null) { // HUGE paranoia
-                yaw = aprilTagPositions.get(detection.id).getHeading() - Math.toRadians(detection.ftcPose.bearing);
-                angle = aprilTagPositions.get(detection.id).getHeading() - detection.ftcPose.bearing;
-                System.out.println("id " + detection.id + ", angle " + (yaw));
-                main.put(detection.id, (yaw + aprilTagPositions.get(detection.id).getHeading()));
+                yaw = aprilTagPositions.get(detection.id).getHeading() - Math.toRadians(detection.ftcPose.yaw);
+                angle = aprilTagPositions.get(detection.id).getHeading() - Math.toRadians(detection.ftcPose.bearing);
+
+                main.put(detection.id, (angle + aprilTagPositions.get(detection.id).getHeading()));
             }
         }
         ArrayList<Pose2d> triangulatedPositions = new ArrayList<>();
@@ -109,7 +111,7 @@ public class Localizer {
             }
         }
 
-        return adjustPose2dForWebcamPosition(addHeadingToPose2d(averagePose2dList(triangulatedPositions), yaw));
+        return adjustPose2dForWebcamPosition(multiplyPose2d(addHeadingToPose2d(averagePose2dList(triangulatedPositions), yaw)));
     }
     private Pose2d addHeadingToPose2d(@NonNull Pose2d input, double heading) {
         return new Pose2d(
@@ -120,6 +122,9 @@ public class Localizer {
     }
     private Pose2d adjustPose2dForWebcamPosition(@NonNull Pose2d input) {
         return new Pose2d(input.getX() - xOffset, input.getY() - yOffset, input.getHeading() - headingOffset);
+    }
+    private Pose2d multiplyPose2d(@NonNull Pose2d input) {
+        return new Pose2d(input.getX() * xMult, input.getY() * yMult, input.getHeading() * headingMult);
     }
     private Pose2d averagePose2dList(@NonNull ArrayList<Pose2d> input) {
         double averageX = 0;
