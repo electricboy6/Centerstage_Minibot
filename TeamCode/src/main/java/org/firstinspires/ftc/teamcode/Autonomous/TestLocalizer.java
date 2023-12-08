@@ -27,7 +27,9 @@ public class TestLocalizer extends LinearOpMode {
 
         Localizer localizer = new Localizer();
         localizer.init(hardwareMap);
+        addToLog("END");
         moveLog();
+        addToLog("START");
 
         waitForStart();
         while(opModeIsActive()) {

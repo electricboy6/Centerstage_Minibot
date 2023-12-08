@@ -27,8 +27,8 @@ public class Localizer {
     private static final int xOffset = 0;
     private static final int yOffset = 0;
     private static final int headingOffset = 0;
-    private static final float xMult = 0.519f;
-    private static final float yMult = 0.611f;
+    private static final float xMult = 1f;
+    private static final float yMult = 1f;
     private static final float headingMult = 1f;
     private static final HashMap<Integer, Pose2d> aprilTagPositions = new HashMap<>();
     static {
@@ -111,7 +111,7 @@ public class Localizer {
             }
         }
 
-        return adjustPose2dForWebcamPosition(multiplyPose2d(addHeadingToPose2d(averagePose2dList(triangulatedPositions), yaw)));
+        return adjustPose2dForWebcamPosition(fixReturnedPosition(addHeadingToPose2d(averagePose2dList(triangulatedPositions), yaw)));
     }
     private Pose2d addHeadingToPose2d(@NonNull Pose2d input, double heading) {
         return new Pose2d(
@@ -123,21 +123,30 @@ public class Localizer {
     private Pose2d adjustPose2dForWebcamPosition(@NonNull Pose2d input) {
         return new Pose2d(input.getX() - xOffset, input.getY() - yOffset, input.getHeading() - headingOffset);
     }
-    private Pose2d multiplyPose2d(@NonNull Pose2d input) {
-        return new Pose2d(input.getX() * xMult, input.getY() * yMult, input.getHeading() * headingMult);
+    private Pose2d fixReturnedPosition(@NonNull Pose2d input) {
+        //return new Pose2d(input.getX() * xMult, input.getY() * yMult, input.getHeading() * headingMult);
+        return new Pose2d(axSquaredPlusBxPlusC(input.getX(), 0.04948462, 0.35136818, -37.875619), input.getY(), input.getHeading());
+    }
+    private double axSquaredPlusBxPlusC(double value, double a, double b, double c) {
+        return (a * Math.pow(value, 2)) + (b * value) + c;
     }
     private Pose2d averagePose2dList(@NonNull ArrayList<Pose2d> input) {
         double averageX = 0;
         double averageY = 0;
         double averageHeading = 0;
         for(Pose2d currentPose2d : input) {
-            averageX += currentPose2d.getX();
-            averageY += currentPose2d.getY();
-            averageHeading += currentPose2d.getHeading();
+            averageX += (currentPose2d.getX());
+            averageY += (currentPose2d.getY());
+            averageHeading += (currentPose2d.getHeading());
         }
         averageX /= input.size();
         averageY /= input.size();
         averageHeading /= input.size();
+
+        // averageX = input.size() / averageX;
+        // averageY = input.size() / averageY;
+        // averageHeading = input.size() / averageHeading;
+
         return new Pose2d(averageX, averageY, averageHeading);
     }
     private Pose2d runTriangulation(@NonNull Pose2d pos1, @NonNull Pose2d pos2) {
