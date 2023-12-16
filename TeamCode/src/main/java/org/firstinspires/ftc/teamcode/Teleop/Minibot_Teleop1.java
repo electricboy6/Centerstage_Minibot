@@ -6,7 +6,9 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.drive.MecanumDriveBase;
@@ -41,8 +43,10 @@ public class Minibot_Teleop1 extends LinearOpMode {
         double expo =   3; // has to be 1 or 3
 
         // set up Mecanum Drive
-        MecanumDriveBase drive = new MecanumDriveBase(hardwareMap); // this has to be here inside the runopmode. The others go above as class variables
-        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        //MecanumDriveBase drive = new MecanumDriveBase(hardwareMap); // this has to be here inside the runopmode. The others go above as class variables
+        //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        CRServo servo1 = hardwareMap.get(CRServo.class, "servo1");
+        CRServo servo2 = hardwareMap.get(CRServo.class, "servo2");
 
         dashboard = FtcDashboard.getInstance();
 
@@ -56,6 +60,7 @@ public class Minibot_Teleop1 extends LinearOpMode {
         waitForStart();
 
         while (!isStopRequested() && teleopTimer.time() < TELEOP_TIME_OUT) {
+            /*
             drive.setWeightedDrivePower(
                     new Pose2d(
                             Math.pow(-gamepad1.left_stick_y, expo) * speedFactor,
@@ -63,7 +68,25 @@ public class Minibot_Teleop1 extends LinearOpMode {
                             Math.pow(-gamepad1.right_stick_x,expo) * speedFactor
                     )
 
+
             );
+            */
+            if(gamepad1.a) {
+                servo2.setPower(-1);
+                servo1.setPower(1);
+            }
+            if(gamepad1.b) {
+                servo2.setPower(1);
+                servo1.setPower(-1);
+            }
+            if(gamepad1.x) {
+                servo2.setPower(1);
+                servo1.setPower(1);
+            }
+            if(gamepad1.y) {
+                servo2.setPower(0);
+                servo1.setPower(0);
+            }
 
         }
     }
