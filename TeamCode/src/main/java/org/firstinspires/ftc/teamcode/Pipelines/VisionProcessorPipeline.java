@@ -102,13 +102,15 @@ public class VisionProcessorPipeline implements VisionProcessor {
         if(frame.empty()) throw new CvException("Input mat was empty!");
 
         Imgproc.cvtColor(frame, mat, Imgproc.COLOR_BGR2HSV);
+
         Core.inRange(mat, lowHSV1, highHSV1, filteredFrame);
         Core.inRange(mat, lowHSV, highHSV, mat);
         //Core.add(mat, filteredFrame, mat);
-        Core.bitwise_and(mat, filteredFrame, mat);
+        Core.bitwise_or(mat, filteredFrame, mat);
 
         Mat noncenter = mat.submat(NONCENTER_ROI); //sub matrices of mat
         Mat center = mat.submat(CENTER_ROI);
+        if(noncenter.empty() || center.empty()) throw new CvException("Noncenter or center mat was empty!");
 
         // if a pixel is between the low and high HSV range OpenCV gives it a value of 255, or white.
         // This way the new image is just grayscale where 0 is black and 255 is white.

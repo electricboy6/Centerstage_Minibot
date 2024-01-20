@@ -23,7 +23,7 @@ public class RunVisionProcessorCam1 extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        VisionProcessorPipeline detector = new VisionProcessorPipeline(telemetry, StartPosition.RED_STAGE);
+        VisionProcessorPipeline detector = new VisionProcessorPipeline(telemetry, StartPosition.RED_AUD);
 
         VisionPortal visionPortal = new VisionPortal.Builder()
                 .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
