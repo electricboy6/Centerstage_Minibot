@@ -7,7 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.Pipelines.PipelineNewCamera;
 import org.firstinspires.ftc.teamcode.Pipelines.StartPosition;
-import org.firstinspires.ftc.teamcode.Pipelines.WebcamPipeline;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
@@ -28,6 +27,7 @@ public class RunPipelineCam1 extends LinearOpMode {
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
+                // this camera supports 1280x800, 1280x720, 800x600, 640x480, and 320x240
                 webcam.startStreaming(320, 240, OpenCvCameraRotation.SENSOR_NATIVE, OpenCvWebcam.StreamFormat.MJPEG);
             }
 
