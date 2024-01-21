@@ -11,10 +11,11 @@ import org.firstinspires.ftc.teamcode.Pipelines.WebcamPipeline;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 @Autonomous
 public class RunPipelineCam1 extends LinearOpMode {
-    OpenCvCamera webcam;
+    OpenCvWebcam webcam; // If it is an OpenCvCamera, you can't set the stream format.
 
 
     @Override
@@ -27,7 +28,7 @@ public class RunPipelineCam1 extends LinearOpMode {
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
-                webcam.startStreaming(1280, 720);
+                webcam.startStreaming(320, 240, OpenCvCameraRotation.SENSOR_NATIVE, OpenCvWebcam.StreamFormat.MJPEG);
             }
 
             @Override
