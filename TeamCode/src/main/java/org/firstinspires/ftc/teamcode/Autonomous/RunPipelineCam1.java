@@ -11,12 +11,9 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvWebcam;
-
 @Autonomous
 public class RunPipelineCam1 extends LinearOpMode {
     OpenCvWebcam webcam; // If it is an OpenCvCamera, you can't set the stream format.
-
-
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -30,7 +27,6 @@ public class RunPipelineCam1 extends LinearOpMode {
                 // this camera supports 1280x800, 1280x720, 800x600, 640x480, and 320x240
                 webcam.startStreaming(320, 240, OpenCvCameraRotation.SENSOR_NATIVE, OpenCvWebcam.StreamFormat.MJPEG);
             }
-
             @Override
             public void onError(int errorCode) {}
 
