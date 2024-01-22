@@ -30,14 +30,17 @@ public class PipelineNewCamera extends OpenCvPipeline {
     Scalar lowHSV;
     Scalar highHSV;
     Mat mat = new Mat(); // Mat is a matrix
+    Mat output = new Mat();
     private static final double PERCENT_COLOR_THRESHOLD = 0.15;
     public PipelineNewCamera(Telemetry t, StartPosition position) {
         telemetry = t;
         startPosition = position;
     }
     @Override
-    public Mat processFrame(Mat input) {
+    public Mat processFrame(Mat input) { // DON'T under any circumstances do anything that has the smallest possibility of changing input
+        // for example, doing output = input; then doing Imgproc.cvtColor(output, output, Imgproc.COLOR_BGRA2BGR); breaks it
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGB2HSV);
+        Imgproc.cvtColor(input, output, Imgproc.COLOR_BGRA2BGR);
         Rect NONCENTER_ROI;
         Rect CENTER_ROI;
         Prop undetectableLocation;
@@ -111,18 +114,16 @@ public class PipelineNewCamera extends OpenCvPipeline {
         }
 
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_GRAY2RGB);
-        //Imgproc.cvtColor(input, input, Imgproc.COLOR_RGB2HSV);
-        //Imgproc.cvtColor(input, input, Imgproc.COLOR_HSV2RGB);
 
-        //Core.bitwise_and(input, mat, input);
+        Core.bitwise_and(output, mat, output);
 
         Scalar colorNone = new Scalar(255, 0, 0); // color scheme for targeting boxes drawn on the display
         Scalar colorTSE = new Scalar(0, 255, 0);
 
-        Imgproc.rectangle(input, NONCENTER_ROI, location == detectableNoncenter? colorTSE:colorNone); // the target boxes surround the ROI's
-        Imgproc.rectangle(input, CENTER_ROI, location == Prop.CENTER? colorTSE:colorNone);
+        Imgproc.rectangle(output, NONCENTER_ROI, location == detectableNoncenter? colorTSE:colorNone); // the target boxes surround the ROI's
+        Imgproc.rectangle(output, CENTER_ROI, location == Prop.CENTER? colorTSE:colorNone);
 
-        return input;
+        return output;
     }
     public Prop getPropLocation() {
         return location;
