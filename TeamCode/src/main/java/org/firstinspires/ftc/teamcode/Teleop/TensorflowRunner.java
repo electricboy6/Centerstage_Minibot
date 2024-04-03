@@ -75,10 +75,10 @@ public class TensorflowRunner extends LinearOpMode {
                 // Use setModelAssetName() if the TF Model is built in as an asset.
                 // Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
                 //.setModelAssetName(TFOD_MODEL_ASSET)
-                .setModelFileName("/sdcard/testModel.tflite")
+                .setModelFileName("/sdcard/model.tflite")
 
                 .setModelLabels(new String[]{"pixel"})
-                //.setIsModelTensorFlow2(true) // our models are tf3
+                .setIsModelTensorFlow2(true)
                 .setIsModelQuantized(true)
                 //.setModelInputSize(300)
                 .setModelAspectRatio(16.0 / 9.0)
@@ -130,6 +130,7 @@ public class TensorflowRunner extends LinearOpMode {
 
         List<Recognition> currentRecognitions = tfod.getRecognitions();
         telemetry.addData("# Objects Detected", currentRecognitions.size());
+        telemetry.addData("FPS", visionPortal.getFps());
 
         // Step through the list of recognitions and display info for each one.
         for (Recognition recognition : currentRecognitions) {
