@@ -77,13 +77,16 @@ public class TensorflowRunner extends LinearOpMode {
                 //.setModelAssetName(TFOD_MODEL_ASSET)
                 .setModelFileName("/sdcard/model.tflite")
 
-                .setModelLabels(new String[]{"pixel"})
+                .setModelLabels(new String[]{"rafin", "colter"})
                 .setIsModelTensorFlow2(true)
                 .setIsModelQuantized(true)
+                .setUseObjectTracker(false)
                 //.setModelInputSize(300)
                 .setModelAspectRatio(16.0 / 9.0)
 
                 .build();
+
+        tfod.setMinResultConfidence(0.5f);
 
         // Create the vision portal by using a builder.
         VisionPortal.Builder builder = new VisionPortal.Builder();
