@@ -15,17 +15,7 @@ import java.util.List;
 
 @TeleOp(name = "tfod runner")
 public class TensorflowRunner extends LinearOpMode {
-
-    private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
-
-    /**
-     * The variable to store our instance of the TensorFlow Object Detection processor.
-     */
     private TfodProcessor tfod;
-
-    /**
-     * The variable to store our instance of the vision portal.
-     */
     private VisionPortal visionPortal;
 
     @Override
@@ -77,49 +67,29 @@ public class TensorflowRunner extends LinearOpMode {
                 //.setModelAssetName(TFOD_MODEL_ASSET)
                 .setModelFileName("/sdcard/model.tflite")
 
-                .setModelLabels(new String[]{"rafin", "colter"})
+                .setModelLabels(new String[]{"pixel"})
                 .setIsModelTensorFlow2(true)
                 .setIsModelQuantized(true)
                 .setUseObjectTracker(false)
-                //.setModelInputSize(300)
                 .setModelAspectRatio(16.0 / 9.0)
-
                 .build();
 
-        tfod.setMinResultConfidence(0.5f);
+        //tfod.setMinResultConfidence(0.5f);
 
-        // Create the vision portal by using a builder.
         VisionPortal.Builder builder = new VisionPortal.Builder();
 
-        // Set the camera (webcam vs. built-in RC phone camera).
-        if (USE_WEBCAM) {
-            builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
-        } else {
-            builder.setCamera(BuiltinCameraDirection.BACK);
-        }
-
-        // Choose a camera resolution. Not all cameras support all resolutions.
+        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
         builder.setCameraResolution(new Size(640, 480));
-
-        // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
         builder.enableLiveView(true);
-
-        // Set the stream format; MJPEG uses less bandwidth than default YUY2.
         builder.setStreamFormat(VisionPortal.StreamFormat.MJPEG);
+        builder.setAutoStopLiveView(true);
 
-        // Choose whether or not LiveView stops if no processors are enabled.
-        // If set "true", monitor shows solid orange screen if no processors enabled.
-        // If set "false", monitor shows camera view without annotations.
-        builder.setAutoStopLiveView(false);
-
-        // Set and enable the processor.
         builder.addProcessor(tfod);
 
-        // Build the Vision Portal, using the above settings.
         visionPortal = builder.build();
 
         // Set confidence threshold for TFOD recognitions, at any time.
-        //tfod.setMinResultConfidence(0.75f);
+        tfod.setMinResultConfidence(0.6f);
 
         // Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);
