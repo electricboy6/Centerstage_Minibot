@@ -53,7 +53,7 @@ public class PixelPipeline {
             } else if(purplePercent > Math.max(Math.max(yellowPercent, greenPercent), whitePercent)) {
                 color = Pixel.PIXEL_COLORS.WHITE;
                 area = purplePercent;
-            }
+            } // todo: fix undesired behavior when two+ percentages are identical
             if(area < MIN_COLOR_PERCENT) {
                 color = Pixel.PIXEL_COLORS.NONE;
             }
