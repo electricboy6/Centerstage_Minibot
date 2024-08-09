@@ -9,6 +9,8 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.tfod.TfodProcessor;
+import org.firstinspires.ftc.teamcode.tfod.PixelPipeline;
+import org.opencv.core.Mat;
 
 import java.util.List;
 
@@ -69,7 +71,7 @@ public class TensorflowRunner extends LinearOpMode {
                 .setModelLabels(new String[]{"pixel"})
                 .setIsModelTensorFlow2(true)
                 .setIsModelQuantized(true)
-                .setUseObjectTracker(false)
+                .setUseObjectTracker(true)
                 .setModelAspectRatio(16.0 / 9.0)
                 .build();
 
@@ -88,7 +90,7 @@ public class TensorflowRunner extends LinearOpMode {
         visionPortal = builder.build();
 
         // Set confidence threshold for TFOD recognitions, at any time.
-        tfod.setMinResultConfidence(0.6f);
+        tfod.setMinResultConfidence(0.7f);
 
         // Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);
@@ -103,6 +105,7 @@ public class TensorflowRunner extends LinearOpMode {
         List<Recognition> currentRecognitions = tfod.getRecognitions();
         telemetry.addData("# Objects Detected", currentRecognitions.size());
         telemetry.addData("FPS", visionPortal.getFps());
+        PixelPipeline.getPixels(new Mat()/*TODO: get current camera frame*/, currentRecognitions);
 
         // Step through the list of recognitions and display info for each one.
         for (Recognition recognition : currentRecognitions) {

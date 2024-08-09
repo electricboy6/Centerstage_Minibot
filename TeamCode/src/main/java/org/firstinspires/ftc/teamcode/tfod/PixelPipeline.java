@@ -10,17 +10,17 @@ import org.opencv.imgproc.Imgproc;
 import java.util.List;
 
 public class PixelPipeline {
-    Mat mat = new Mat();
-    Mat white = new Mat();
-    Mat yellow = new Mat();
-    Mat green = new Mat();
-    Mat purple = new Mat();
-    double whitePercent;
-    double yellowPercent;
-    double greenPercent;
-    double purplePercent;
-    static final int MIN_COLOR_PERCENT = 50;
-    public Pixel[] getPixels(Mat input, List<Recognition> pixels) {
+    private static Mat mat = new Mat();
+    private static Mat white = new Mat();
+    private static Mat yellow = new Mat();
+    private static Mat green = new Mat();
+    private static Mat purple = new Mat();
+    private static double whitePercent;
+    private static double yellowPercent;
+    private static double greenPercent;
+    private static double purplePercent;
+    private static final int MIN_COLOR_PERCENT = 50;
+    public static Pixel[] getPixels(Mat input, List<Recognition> pixels) {
         Pixel[] output = new Pixel[pixels.size()];
         Pixel.PIXEL_COLORS color = Pixel.PIXEL_COLORS.NONE;
         double area = 0;
