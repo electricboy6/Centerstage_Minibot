@@ -15,10 +15,6 @@ public class PixelPipeline {
     private static Mat yellow = new Mat();
     private static Mat green = new Mat();
     private static Mat purple = new Mat();
-    private static double whitePercent;
-    private static double yellowPercent;
-    private static double greenPercent;
-    private static double purplePercent;
     private static final int MIN_COLOR_PERCENT = 50;
     public static Pixel[] getPixels(Mat input, List<Recognition> pixels) {
         Pixel[] output = new Pixel[pixels.size()];
@@ -37,10 +33,10 @@ public class PixelPipeline {
             Core.inRange(mat, PixelColors.YELLOW_LOW_HSV, PixelColors.YELLOW_HIGH_HSV, yellow);
             Core.inRange(mat, PixelColors.GREEN_LOW_HSV, PixelColors.GREEN_HIGH_HSV, green);
             Core.inRange(mat, PixelColors.PURPLE_LOW_HSV, PixelColors.PURPLE_HIGH_HSV, purple);
-            whitePercent = Core.sumElems(white).val[0] / pixel.area() / 2.55;
-            yellowPercent = Core.sumElems(yellow).val[0] / pixel.area() / 2.55;
-            greenPercent = Core.sumElems(green).val[0] / pixel.area() / 2.55;
-            purplePercent = Core.sumElems(purple).val[0] / pixel.area() / 2.55;
+            double whitePercent = Core.sumElems(white).val[0] / pixel.area() / 2.55;
+            double yellowPercent = Core.sumElems(yellow).val[0] / pixel.area() / 2.55;
+            double greenPercent = Core.sumElems(green).val[0] / pixel.area() / 2.55;
+            double purplePercent = Core.sumElems(purple).val[0] / pixel.area() / 2.55;
             if(whitePercent > Math.max(Math.max(yellowPercent, greenPercent), purplePercent)) {
                 color = Pixel.PIXEL_COLORS.WHITE;
                 area = whitePercent;

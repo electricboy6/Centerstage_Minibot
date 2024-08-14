@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.tfod;
 
+import androidx.annotation.NonNull;
+
 import org.opencv.core.Rect;
 
 public class Pixel {
@@ -19,5 +21,11 @@ public class Pixel {
     public Pixel() {
         this.color = PIXEL_COLORS.NONE;
         this.position = null;
+    }
+    @NonNull
+    @Override
+    public String toString() {
+        assert this.position != null;
+        return "Color: " + this.color.toString() + "\nCoordinates: (" + this.position.x + ", " + this.position.y + ")";
     }
 }
