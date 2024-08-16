@@ -102,11 +102,13 @@ public class TensorflowRunner extends LinearOpMode {
         telemetry.addData("# Objects Detected", currentRecognitions.size());
         telemetry.addData("FPS", visionPortal.getFps());
 
+        assert frameCapture.currentFrame != null;
+
         System.out.println(Arrays.toString(PixelPipeline.getPixels(frameCapture.currentFrame, currentRecognitions)));
 
         for (Recognition recognition : currentRecognitions) {
-            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+            double x = (recognition.getLeft() + recognition.getRight()) / 2;
+            double y = (recognition.getTop()  + recognition.getBottom()) / 2;
 
             telemetry.addData(""," ");
             telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
